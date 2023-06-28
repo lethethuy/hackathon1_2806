@@ -1,8 +1,10 @@
 package run;
 
 import config.InputMethods;
+import model.Cart;
 import model.Catalog;
 import model.Product;
+import service.CartService;
 import service.CatalogService;
 import service.ProductService;
 
@@ -12,13 +14,15 @@ import java.util.Comparator;
 public class Main {
     private final static CatalogService catalogService = new CatalogService();
     private final static ProductService productService = new ProductService();
+    private final static CartService cartService = new CartService();
 
     public static void main(String[] args) {
         while (true) {
             System.out.println("**************************BASIC-MENU**************************\n" +
                     "1. Quản lý danh mục [5 điểm]\n" +
                     "2. Quản lý sản phẩm [5 điểm]\n" +
-                    "3. Thoát [5 điểm]");
+                    "3. Dành cho người dùng [5 điểm]\n" +
+                    "4. Thoát [5 điểm]");
 
             System.out.println("Nhap vao lua chon cua ban: ");
             int choice = InputMethods.getInteger();
@@ -36,6 +40,12 @@ public class Main {
                     break;
 
                 case 3:
+                    // menu product
+                    menuUserManager();
+
+                    break;
+
+                case 4:
                     System.exit(0);
                     break;
                 default:
@@ -330,7 +340,6 @@ public class Main {
         }
 
 
-
     }
 
 
@@ -396,9 +405,137 @@ public class Main {
     }
 
 
+    public static void menuUserManager() {
+        System.out.println("**************************MENU-USER**************************\n" +
+                "1. Xem danh sách sản phẩm\n" +
+                "2. Thêm vào giỏ hàng\n" +
+                "3. Xem tất cả sản phẩm giỏ hàng\n" +
+                "4. Thay đổi số lượng sản phẩm trong giỏ hàng\n" +
+                "5. Xóa 1 sản phẩm trong giỏ hàng\n" +
+                "6. Xóa toàn bộ sản phẩm trong giỏ hàng\n" +
+                "7. Quay lại");
+        System.out.println("Nhap vao lua chon cua ban: ");
+        int choice = InputMethods.getInteger();
+        switch (choice) {
+            case 1:
+                // menu catalog
+                displayProduct();
 
 
+                break;
+            case 2:
+                // add product to cart
+                addProductToCart();
 
+                break;
+            case 3:
+                // display cart
+                displayCart();
+
+                break;
+            case 4:
+                editCartInfo();
+
+
+                break;
+            case 5:
+                deleteCart();
+
+
+                break;
+            case 6:
+                deleteAllCart();
+                break;
+            case 7:
+                System.exit(0);
+                break;
+            default:
+                System.out.println("Khong hop le, vui long nhap lai");
+
+        }
+    }
+
+    public static void addProductToCart() {
+        Cart newCart = new Cart();
+        System.out.println("Tat ca cac san pham hien dang co");
+        displayProduct();
+        System.out.println("Lua chon san pham muon them vao cart thong qua Id");
+        System.out.println("Hay nhap id cua product");
+        String idProduct = InputMethods.getString();
+        System.out.println("Product them vao cart la: ");
+        Product productAddToCart = productService.findById(idProduct);
+        System.out.println(productAddToCart);
+
+        int newId = cartService.getNewId();
+        newCart.setCartItemId(newId);
+        System.out.println("New Id " + newId);
+
+        String newNameProduct = productAddToCart.getProductName();
+        newCart.setNameProduct(newNameProduct);
+        System.out.println("Name " + newNameProduct);
+
+        double price = productAddToCart.getProductPrice();
+        newCart.setPrice(price);
+        System.out.println("Price " + price);
+
+        System.out.println("Hay nhap so luong: ");
+        int quantity = InputMethods.getInteger();
+        newCart.setQuantity(quantity);
+
+        if (productAddToCart.getStock() < 0) {
+            System.out.println("San pham da het");
+        } else if (productAddToCart.getStock() > 0) {
+            for (Cart cart : cartService.getAllCart()
+            ) {
+                if (cart.getNameProduct()== newCart.getNameProduct()) {
+                    newCart.setQuantity(newCart.getQuantity() + cart.getQuantity());
+                }
+            }
+        }
+        cartService.save(newCart);
+    }
+
+    public static void displayCart() {
+        for (Cart cart : cartService.getAllCart()) {
+            System.out.println(cart);
+        }
+    }
+
+    public static void deleteCart() {
+        System.out.println("nhập vào id cần xóa ");
+        int idDel = InputMethods.getInteger();
+        cartService.deleteCart(idDel);
+        for (Cart cart : cartService.getAllCart()
+        ) {
+            if (cart == null) {
+                System.out.println("cart trong, ko xoa duoc");
+            } else if (cart.getCartItemId() == idDel) {
+                cartService.deleteCart(idDel);
+                System.out.println("Xoa thanh cong");
+            }
+        }
+    }
+
+    public static void deleteAllCart() {
+        cartService.getAllCart().clear();
+    }
+
+
+    public static void editCartInfo() {
+        System.out.println("Nhập vào ID cần sửa: ");
+        int idEdit = InputMethods.getInteger();
+        Cart editProduct = cartService.findById(idEdit);
+
+        if (editProduct == null) {
+            System.err.println("Không tìm thấy sản phẩm");
+            return;
+        }
+        System.out.println("Thông tin đối tượng cần sửa là:");
+        System.out.println(editProduct);
+        System.out.println("Nhap so luong muon sua");
+        editProduct.setQuantity(InputMethods.getInteger());
+
+    }
 
 
 }
